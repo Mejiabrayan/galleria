@@ -9,17 +9,12 @@ cloudinary.config({
 
 export default async function Home() {
 
-  const results = await cloudinary.api.resources();
-  console.log('results', results)
+  const {resources} = await cloudinary.api.resources();
 
   return (
     <div className='h-full mt-6'>
       <MediaGallery
-        resources={[
-          {
-            id: 'my-image',
-          },
-        ]}
+        resources={resources}
       />
     </div>
   );
