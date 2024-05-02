@@ -32,10 +32,10 @@ interface MediaGalleryProps {
 }
 
 const MediaGallery = ({ resources: initialResources }: MediaGalleryProps) => {
-  const { resources } = useResources({ 
+  const { resources } = useResources({
     initialResources,
     tag: 'media',
-   });
+  });
   console.log(resources);
 
   const [selected, setSelected] = useState<Array<string>>([]);

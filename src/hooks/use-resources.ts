@@ -9,6 +9,7 @@ interface UseResources {
 export function useResources(options?: UseResources) {
   const queryClient = useQueryClient();
   const { disableFetch = false } = options || {};
+  
   const { data: resources } = useQuery({
     queryKey: ['resources', options?.tag],
     queryFn: async () => {
