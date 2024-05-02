@@ -7,7 +7,6 @@ import { Plus, X, Save } from 'lucide-react';
 import Container from '@/components/Container';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useQuery } from '@tanstack/react-query';
 import { useResources } from '@/hooks/use-resources';
 import {
   DropdownMenu,
@@ -164,7 +163,7 @@ const MediaGallery = ({ resources: initialResources }: MediaGalleryProps) => {
                         className={`block cursor-pointer border-8 transition-[border] ${
                           isChecked ? 'border-blue-500' : 'border-white'
                         }`}
-                        href='#'
+                        href={`/resources/${resource.asset_id}`}
                       >
                         <CldImage
                           width={resource.width}
