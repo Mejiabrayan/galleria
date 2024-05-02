@@ -1,3 +1,29 @@
-# galleria
-# galleria
-# galleria
+## Project Tasks
+
+- [x] Install and configure the Cloudinary Node.js SDK
+- [x] List photos from Cloudinary
+- [x] Optimize and make images responsive using Next.js and Cloudinary
+- [x] Upload images with the CldUploadButton
+- [x] Pass server data to the client using Tanstack Query
+- [x] Create a custom hook to manage resource requests
+- [x] Update UI optimistically on upload using Tanstack Query
+- [x] Tag images and fetch images by tag
+- [x] Optimize server-to-client resource and request management
+- [ ] Create dynamic routes for viewing individual images
+- [ ] Use AI for image improvement, restoration, and background removal
+- [ ] Add animated loading placeholders for images
+- [ ] Dynamically crop and resize images to different aspect ratios
+- [ ] Customize images with filters and effects
+- [ ] Save and update images with applied transformations and effects
+- [ ] Refresh and update UI state on image save
+- [ ] Save images as copies
+- [ ] Delete images
+- [ ] Invalidate Tanstack Query tags on change
+- [ ] Add image resource metadata to the info panel
+- [ ] Set up a Next.js loading UI for React Suspense streaming
+- [ ] Add loading indicators to the homepage gallery
+- [ ] Create a collage from multiple images
+- [ ] Save collage creations to the library
+- [ ] Generate Ken Burns style zoom animations from images
+- [ ] Stylize images with Color Pop
+- [ ] Optimize creation generation and UI
