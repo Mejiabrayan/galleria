@@ -28,7 +28,7 @@ export default function SidebarLinks({ className, links }: SidebarLinksProps) {
             <Link
               className={cn(
                 'flex w-full items-center gap-3 px-8 py-2 md:rounded-r-lg',
-                isActive && 'text-white bg-blue-500'
+                isActive && 'text-black bg-primary-accent',
               )} href={path}
             >
               { icon } { label }

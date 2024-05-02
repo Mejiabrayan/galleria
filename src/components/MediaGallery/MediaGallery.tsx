@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useState } from 'react';
@@ -8,6 +7,8 @@ import { Plus, X, Save } from 'lucide-react';
 import Container from '@/components/Container';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useQuery } from '@tanstack/react-query';
+import { useResources } from '@/hooks/use-resources';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,23 +25,24 @@ import {
 } from '@/components/ui/dialog';
 
 import { CldImage } from 'next-cloudinary';
-
-
-interface CloudinaryResource {
-  height: number;
-  public_id: string;
-  secure_url: string;
-  width: number;
-}
+import { CloudinaryResource } from '@/types/cloudinary';
 
 interface MediaGalleryProps {
   resources: Array<CloudinaryResource>;
+  tag?: string;
 }
 
-const MediaGallery = ({ resources }: MediaGalleryProps) => {
+const MediaGallery = ({ resources: initialResources }: MediaGalleryProps) => {
+  const { resources } = useResources({ 
+    initialResources,
+    tag: 'media',
+   });
+  console.log(resources);
+
   const [selected, setSelected] = useState<Array<string>>([]);
   const [creation, setCreation] = useState();
 
+  // useQuery;
   /**
    * handleOnClearSelection
    */
@@ -80,7 +82,7 @@ const MediaGallery = ({ resources }: MediaGalleryProps) => {
       {/** Management navbar presented when assets are selected */}
 
       {selected.length > 0 && (
-        <Container className='fixed z-50 top-0 left-0 w-full h-16 flex items-center justify-between gap-4 bg-white shadow-lg'>
+        <Container className='fixed z-50 top-0 left-0 w-full h-16 flex items-center justify-between gap-4 bg-black text-white shadow-lg'>
           <div className='flex items-center gap-4'>
             <ul>
               <li>
@@ -138,7 +140,7 @@ const MediaGallery = ({ resources }: MediaGalleryProps) => {
                 }
 
                 return (
-                  <li key={resource.public_id} className='bg-white dark:bg-zinc-700'>
+                  <li key={resource.public_id} className='bg-black '>
                     <div className='relative group'>
                       <label
                         className={`absolute ${
@@ -169,6 +171,8 @@ const MediaGallery = ({ resources }: MediaGalleryProps) => {
                           height={resource.height}
                           src={resource.public_id}
                           alt=''
+                          draggable={false}
+                          sizes='(min-width: 768px) 33vw, (min-width: 1024px) 25, vh, (min-width: 1024px) 25vh, (min-width: 1200px) 20vw, 50vw'
                         />
                       </Link>
                     </div>
