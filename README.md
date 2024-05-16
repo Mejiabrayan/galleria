@@ -9,11 +9,11 @@
 - [x] Update UI optimistically on upload using Tanstack Query
 - [x] Tag images and fetch images by tag
 - [x] Optimize server-to-client resource and request management
-- [ ] Create dynamic routes for viewing individual images
-- [ ] Use AI for image improvement, restoration, and background removal
-- [ ] Add animated loading placeholders for images
-- [ ] Dynamically crop and resize images to different aspect ratios
-- [ ] Customize images with filters and effects
+- [x] Create dynamic routes for viewing individual images
+- [x] Use AI for image improvement, restoration, and background removal
+- [x] Add animated loading placeholders for images
+- [x] Dynamically crop and resize images to different aspect ratios
+- [x] Customize images with filters and effects
 - [ ] Save and update images with applied transformations and effects
 - [ ] Refresh and update UI state on image save
 - [ ] Save images as copies

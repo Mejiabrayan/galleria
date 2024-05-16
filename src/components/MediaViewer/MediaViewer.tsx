@@ -1,37 +1,34 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import {
+  Ban,
   Blend,
-  ChevronLeft,
   ChevronDown,
+  ChevronLeft,
   Crop,
+  Image,
   Info,
   Pencil,
+  PencilRuler,
+  RectangleHorizontal,
+  RectangleVertical,
+  ScissorsSquare,
+  Square,
   Trash2,
   Wand2,
-  Image,
-  Ban,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 
 import Container from '@/components/Container';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -40,9 +37,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+import CldImage from '@/components/CldImage';
 import { CloudinaryResource } from '@/types/cloudinary';
-import { CldImage, CldImageProps } from 'next-cloudinary';
+import { CldImageProps } from 'next-cloudinary';
 interface Deletion {
   state: string;
 }
@@ -58,6 +64,8 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
   const [deletion, setDeletion] = useState<Deletion>();
 
   const [enhancements, setEnhancements] = useState<string>();
+  const [crop, setCrop] = useState<string>();
+  const [filter, setFilter] = useState<string>();
   console.log('enhancements', enhancements);
 
   type Transformations = Omit<CldImageProps, 'src' | 'alt'>;
@@ -71,8 +79,6 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
     transformations.removeBackground = true;
   }
 
-
-  console.log('enhancements', enhancements);
   // Canvas sizing based on the image dimensions. The tricky thing about
   // showing a single image in a space like this in a responsive way is trying
   // to take up as much room as possible without distorting it or upscaling
@@ -80,8 +86,46 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
   // determine whether it's landscape, portrait, or square, and change a little
   // CSS to make it appear centered and scalable!
 
-  const canvasHeight = resource.height;
-  const canvasWidth = resource.width;
+  if (crop === 'square') {
+    if (resource.width > resource.height) {
+      transformations.height = resource.width;
+    } else {
+      transformations.width = resource.height;
+    }
+    transformations.crop = {
+      source: true,
+      type: 'fill',
+    };
+  } else if (crop == 'landscape') {
+    transformations.height = Math.floor(resource.width / (16 / 9)); // 16:9 aspect ratio
+    transformations.crop = {
+      source: true,
+      type: 'fill',
+    };
+  } else if (crop == 'portrait') {
+    transformations.width = Math.floor(resource.height / (16 / 9));
+    transformations.crop = {
+      source: true,
+      type: 'fill',
+    };
+  }
+
+  if (typeof filter === 'string' && ['grayscale', 'sepia'].includes(filter)) {
+    transformations[filter as keyof Transformations] = true;
+  } else if (typeof filter === 'string' && ['sizzle'].includes(filter)) {
+    transformations.art = filter;
+  } else if (typeof filter === 'string' && filter === 'effects') {
+    transformations.effects = [
+      { background: 'green' },
+      { gradientFade: true },
+      { gradientFade: 'symetric,x_0.5' },
+    ];
+  } else if (typeof filter === 'string' && filter === 'tint') {
+    transformations.tint = 'equalize:80:blue:blueviolet';
+  }
+
+  const canvasHeight = transformations.height || resource.height;
+  const canvasWidth = transformations.width || resource.width;
 
   const isSquare = canvasHeight === canvasWidth;
   const isLandscape = canvasWidth > canvasHeight;
@@ -202,8 +246,10 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                 <li>
                   <Button
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 border-white`}
-                    oncClick={() => setEnhancements('none')}
+                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                      !enhancements ? 'border-white' : 'border-transparent'
+                    } `}
+                    onClick={() => setEnhancements('none')}
                   >
                     <Ban className='w-5 h-5 mr-3' />
                     <span className='text-[1.01rem]'>None</span>
@@ -212,30 +258,42 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                 <li>
                   <Button
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 border-white`}
+                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                      enhancements == 'improve'
+                        ? 'border-white'
+                        : 'border-transparent'
+                    }`}
                     onClick={() => setEnhancements('improve')}
                   >
-                    <Ban className='w-5 h-5 mr-3' />
+                    <Wand2 className='w-5 h-5 mr-3' />
                     <span className='text-[1.01rem]'>Improve</span>
                   </Button>
                 </li>
                 <li>
                   <Button
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 border-white`}
+                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                      enhancements == 'restore'
+                        ? 'border-white'
+                        : 'border-transparent'
+                    }`}
                     onClick={() => setEnhancements('restore')}
                   >
-                    <Ban className='w-5 h-5 mr-3' />
+                    <PencilRuler className='w-5 h-5 mr-3' />
                     <span className='text-[1.01rem]'>Restore</span>
                   </Button>
                 </li>
                 <li>
                   <Button
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 border-white`}
+                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                      enhancements == 'remove-background'
+                        ? 'border-white'
+                        : 'border-transparent'
+                    }`}
                     onClick={() => setEnhancements('remove-background')}
                   >
-                    <Ban className='w-5 h-5 mr-3' />
+                    <ScissorsSquare className='w-5 h-5 mr-3' />
                     <span className='text-[1.01rem]'>Remove Background</span>
                   </Button>
                 </li>
@@ -250,11 +308,50 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
               <ul className='grid gap-2'>
                 <li>
                   <Button
+                    onClick={() => setCrop(undefined)}
                     variant='ghost'
                     className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 border-white`}
                   >
                     <Image className='w-5 h-5 mr-3' />
                     <span className='text-[1.01rem]'>Original</span>
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    onClick={() => setCrop('square')}
+                    variant='ghost'
+                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                      crop ? 'border-white' : 'border-transparent'
+                    }`}
+                  >
+                    <Square className='w-5 h-5 mr-3' />
+                    <span className='text-[1.01rem]'>Square</span>
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    onClick={() => setCrop('portrait')}
+                    variant='ghost'
+                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                      crop === 'square' ? 'border-white' : 'border-transparent'
+                    }`}
+                  >
+                    <RectangleVertical className='w-5 h-5 mr-3' />
+                    <span className='text-[1.01rem]'>Portrait</span>
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    onClick={() => setCrop('landscape')}
+                    variant='ghost'
+                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                      crop === 'landscape'
+                        ? 'border-white'
+                        : 'border-transparent'
+                    }`}
+                  >
+                    <RectangleHorizontal className='w-5 h-5 mr-3' />
+                    <span className='text-[1.01rem]'>Landscape</span>
                   </Button>
                 </li>
               </ul>
@@ -267,11 +364,118 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
               </SheetHeader>
               <ul className='grid grid-cols-2 gap-2'>
                 <li>
-                  <button className={`w-full border-4 border-white`}>
-                    <img
-                      width={resource.width}
-                      height={resource.height}
-                      src='/icon-1024x1024.png'
+                  <button
+                    onClick={() => setFilter(undefined)}
+                    className={`w-full border-4 ${
+                      !filter ? 'border-white' : 'border-transparent'
+                    }`}
+                  >
+                    <CldImage
+                      width={156}
+                      height={156}
+                      crop='fill'
+                      src={resource.public_id}
+                      alt='No Filter'
+                    />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => setFilter('grayscale')}
+                    className={`w-full border-4 ${
+                      filter === 'grayscale'
+                        ? 'border-white'
+                        : 'border-transparent'
+                    }`}
+                  >
+                    <CldImage
+                      width={156}
+                      height={156}
+                      crop='fill'
+                      grayscale
+                      src={resource.public_id}
+                      alt='No Filter'
+                    />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => setFilter('sepia')}
+                    className={`w-full border-4 ${
+                      filter === 'sepia' ? 'border-white' : 'border-transparent'
+                    }`}
+                  >
+                    <CldImage
+                      width={156}
+                      height={156}
+                      crop='fill'
+                      sepia
+                      src={resource.public_id}
+                      alt='No Filter'
+                    />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => setFilter('effects')}
+                    className={`w-full border-4 ${
+                      filter === 'effects'
+                        ? 'border-white'
+                        : 'border-transparent'
+                    }`}
+                  >
+                    <CldImage
+                      width={156}
+                      height={156}
+                      crop='fill'
+                      effects={[
+                        {
+                          background: 'green',
+                        },
+                        {
+                          gradientFade: true,
+                        },
+                        {
+                          gradientFade: 'symetric,x_0.5',
+                        },
+                      ]}
+                      src={resource.public_id}
+                      alt='No Filter'
+                    />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => setFilter('tint')}
+                    className={`w-full border-4 ${
+                      filter === 'tint' ? 'border-white' : 'border-transparent'
+                    }`}
+                  >
+                    <CldImage
+                      width={156}
+                      height={156}
+                      crop='fill'
+                      tint='equalize:80:blue:blueviolet'
+                      src={resource.public_id}
+                      alt='No Filter'
+                    />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => setFilter('sizzle')}
+                    className={`w-full border-4 ${
+                      filter === 'sizzle'
+                        ? 'border-white'
+                        : 'border-transparent'
+                    }`}
+                  >
+                    <CldImage
+                      width={156}
+                      height={156}
+                      crop='fill'
+                      art='sizzle'
+                      src={resource.public_id}
                       alt='No Filter'
                     />
                   </button>
@@ -411,6 +615,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
 
       <div className='relative flex justify-center items-center align-center w-full h-full'>
         <CldImage
+          key={JSON.stringify(transformations)}
           className='object-contain'
           width={resource.width}
           height={resource.height}
