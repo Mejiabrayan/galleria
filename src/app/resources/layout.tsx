@@ -12,7 +12,7 @@ export default function ResourcesLayout({
   children: React.ReactNode
 }) {
   return (
-    <main className="h-screen bg-black overflow-hidden">
+    <main className="h-screen overflow-hidden">
       { children }
     </main>
   )

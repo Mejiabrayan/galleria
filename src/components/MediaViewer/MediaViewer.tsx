@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
+import { useQueryClient } from '@tanstack/react-query';
 
 import {
   Ban,
@@ -7,8 +8,9 @@ import {
   ChevronDown,
   ChevronLeft,
   Crop,
-  Image,
+  Image as ImageIcon,
   Info,
+  Loader2,
   Pencil,
   PencilRuler,
   RectangleHorizontal,
@@ -19,6 +21,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import Container from '@/components/Container';
@@ -48,12 +51,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import CldImage from '@/components/CldImage';
 import { CloudinaryResource } from '@/types/cloudinary';
-import { CldImageProps } from 'next-cloudinary';
+import { CldImageProps, getCldImageUrl } from 'next-cloudinary';
 interface Deletion {
   state: string;
 }
 
 const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
+  const queryClient = useQueryClient();
+
+  const router = useRouter();
+
   const sheetFiltersRef = useRef<HTMLDivElement | null>(null);
   const sheetInfoRef = useRef<HTMLDivElement | null>(null);
 
@@ -66,6 +73,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
   const [enhancements, setEnhancements] = useState<string>();
   const [crop, setCrop] = useState<string>();
   const [filter, setFilter] = useState<string>();
+  const [version, setVersion] = useState<number>(1);
   console.log('enhancements', enhancements);
 
   type Transformations = Omit<CldImageProps, 'src' | 'alt'>;
@@ -124,6 +132,8 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
     transformations.tint = 'equalize:80:blue:blueviolet';
   }
 
+  const hasTransformation = Object.entries(transformations).length > 0;
+
   const canvasHeight = transformations.height || resource.height;
   const canvasWidth = transformations.width || resource.width;
 
@@ -152,14 +162,99 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
     setFilterSheetIsOpen(false);
     setInfoSheetIsOpen(false);
     setDeletion(undefined);
+    setEnhancements(undefined);
+    setFilter(undefined);
+    setCrop(undefined);
   }
 
   /**
-   * handleOnDeletionOpenChange
+   * discardChanges
    */
 
+  function discardChanges() {
+    setEnhancements(undefined);
+    setCrop(undefined);
+    setFilter(undefined);
+  }
+
+  /**
+   * handleOnSave
+   */
+
+  async function handleOnSave() {
+    const url = getCldImageUrl({
+      width: resource.width,
+      height: resource.height,
+      src: resource.public_id,
+      quality: 'default',
+      format: 'default',
+      ...transformations,
+    });
+
+    await fetch(url); // pre process the image
+
+    const results = await fetch('/api/upload', {
+      method: 'POST',
+      body: JSON.stringify({
+        publicId: resource.public_id,
+        url,
+      }),
+    }).then((r) => r.json());
+    invalidateQueries();
+    closeMenus();
+    discardChanges();
+    setVersion(Date.now());
+  }
+
+  async function handleOnSaveCopy() {
+    const url = getCldImageUrl({
+      width: resource.width,
+      height: resource.height,
+      src: resource.public_id,
+      quality: 'default',
+      format: 'default',
+      ...transformations,
+    });
+
+    await fetch(url); // pre process the image
+
+    const { data } = await fetch('/api/upload', {
+      method: 'POST',
+      body: JSON.stringify({
+        url,
+      }),
+    }).then((r) => r.json());
+
+    invalidateQueries();
+
+    router.push(`/resources/${data.asset_id}`);
+  }
+
+  async function handleOnDelete() {
+    if (deletion?.state === 'deleting') return;
+    setDeletion({ state: 'deleting' });
+    await fetch('/api/delete', {
+      method: 'POST',
+      body: JSON.stringify({
+        publicId: resource.public_id,
+      }),
+    });
+    // Invalidate the query cache for the resources list
+    invalidateQueries();
+    router.push('/');
+  }
+
+  function invalidateQueries() {
+    queryClient.invalidateQueries({
+      queryKey: [
+        'resources',
+        String(process.env.NEXT_PUBLIC_CLOUDINARY_LIBRARY_TAG),
+      ],
+    });
+  }
+
   function handleOnDeletionOpenChange(isOpen: boolean) {
-    // Reset deletion dialog if the user is closing it
+    // Reset deletion dialog if  the user is closing it
     if (!isOpen) {
       setDeletion(undefined);
     }
@@ -192,11 +287,11 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
   }
 
   return (
-    <div className='h-screen bg-black px-0'>
+    <div className='h-screen  px-0'>
       {/** Modal for deletion */}
 
       <Dialog
-        open={!!deletion?.state}
+        open={deletion && ['confirm', 'deleting'].includes(deletion.state)}
         onOpenChange={handleOnDeletionOpenChange}
       >
         <DialogContent data-exclude-close-on-click={true}>
@@ -206,8 +301,14 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
             </DialogTitle>
           </DialogHeader>
           <DialogFooter className='justify-center sm:justify-center'>
-            <Button variant='destructive'>
-              <Trash2 className='h-4 w-4 mr-2' /> Delete
+            <Button onClick={handleOnDelete} variant='destructive'>
+              {deletion?.state === 'deleting' && (
+                <Loader2 className='h-4 w-4 mr-2' />
+              )}
+              {deletion?.state === 'deleting' && (
+                <Trash2 className='h-4 w-4 mr-2' />
+              )}
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -218,11 +319,11 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
       <Sheet modal={false} open={filterSheetIsOpen}>
         <SheetContent
           ref={sheetFiltersRef}
-          className='w-full sm:w-3/4 grid grid-rows-[1fr_auto] bg-zinc-800 text-white border-0'
+          className='w-full sm:w-3/4 grid grid-rows-[1fr_auto]  text-neutral-600 border-0'
           data-exclude-close-on-click={true}
         >
           <Tabs defaultValue='account'>
-            <TabsList className='grid grid-cols-3 w-full bg-transparent p-0'>
+            <TabsList className='grid grid-cols-3 w-full bg-transparent p-0  shadow border-r'>
               <TabsTrigger value='enhance'>
                 <Wand2 />
                 <span className='sr-only'>Enhance</span>
@@ -246,7 +347,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                 <li>
                   <Button
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                    className={`text-left justify-start w-full h-14 border-4 bg-transparent ${
                       !enhancements ? 'border-white' : 'border-transparent'
                     } `}
                     onClick={() => setEnhancements('none')}
@@ -258,7 +359,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                 <li>
                   <Button
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                    className={`text-left justify-start w-full h-14 border-4 bg-transparent ${
                       enhancements == 'improve'
                         ? 'border-white'
                         : 'border-transparent'
@@ -272,7 +373,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                 <li>
                   <Button
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                    className={`text-left justify-start w-full h-14 border-4 bg-transparent ${
                       enhancements == 'restore'
                         ? 'border-white'
                         : 'border-transparent'
@@ -286,7 +387,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                 <li>
                   <Button
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                    className={`text-left justify-start w-full h-14 border-4 bg-transparent ${
                       enhancements == 'remove-background'
                         ? 'border-white'
                         : 'border-transparent'
@@ -310,9 +411,11 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                   <Button
                     onClick={() => setCrop(undefined)}
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 border-white`}
+                    className={`text-left justify-start w-full h-14 border-4 bg-transparent ${
+                      !crop ? 'border-white' : 'border-transparent'
+                    }`}
                   >
-                    <Image className='w-5 h-5 mr-3' />
+                    <ImageIcon className='w-5 h-5 mr-3' />
                     <span className='text-[1.01rem]'>Original</span>
                   </Button>
                 </li>
@@ -320,8 +423,8 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                   <Button
                     onClick={() => setCrop('square')}
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
-                      crop ? 'border-white' : 'border-transparent'
+                    className={`text-left justify-start w-full h-14 border-4 bg-transparent ${
+                      crop === 'square' ? 'border-white' : 'border-transparent'
                     }`}
                   >
                     <Square className='w-5 h-5 mr-3' />
@@ -332,8 +435,10 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                   <Button
                     onClick={() => setCrop('portrait')}
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
-                      crop === 'square' ? 'border-white' : 'border-transparent'
+                    className={`text-left justify-start w-full h-14 border-4 bg-transparent ${
+                      crop === 'portrait'
+                        ? 'border-white'
+                        : 'border-transparent'
                     }`}
                   >
                     <RectangleVertical className='w-5 h-5 mr-3' />
@@ -344,7 +449,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                   <Button
                     onClick={() => setCrop('landscape')}
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 ${
+                    className={`text-left justify-start w-full h-14 border-4 bg-transparent ${
                       crop === 'landscape'
                         ? 'border-white'
                         : 'border-transparent'
@@ -484,41 +589,51 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
             </TabsContent>
           </Tabs>
           <SheetFooter className='gap-2 sm:flex-col'>
-            <div className='grid grid-cols-[1fr_4rem] gap-2'>
-              <Button
-                variant='ghost'
-                className='w-full h-14 text-left justify-center items-center bg-blue-500'
-              >
-                <span className='text-[1.01rem]'>Save</span>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant='ghost'
-                    className='w-full h-14 text-left justify-center items-center bg-blue-500'
-                  >
-                    <span className='sr-only'>More Options</span>
-                    <ChevronDown className='h-5 w-5' />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className='w-56'
-                  data-exclude-close-on-click={true}
+            {hasTransformation && (
+              <div className='grid grid-cols-[1fr_4rem] gap-2'>
+                <Button
+                  onClick={handleOnSave}
+                  className='w-full h-14 text-left justify-center items-center bg-blue-500 hover:bg-blue-500/50 text-white'
                 >
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem>
-                      <span>Save as Copy</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  <span className='text-[1.01rem]'>Save</span>
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      className='w-full h-14 text-left justify-center items-center  bg-blue-500 hover:bg-blue-500/50 text-white'
+                    >
+                      <span className='sr-only'>More Options</span>
+                      <ChevronDown className='h-5 w-5' />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className='w-56'
+                    data-exclude-close-on-click={true}
+                  >
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem onClick={handleOnSaveCopy}>
+                        <span>Save as Copy</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
             <Button
-              variant='outline'
-              className='w-full h-14 text-left justify-center items-center bg-transparent border-zinc-600'
-              onClick={() => closeMenus()}
+              className={`w-full h-14 text-left justify-center items-center  ${
+                hasTransformation
+                  ? 'bg-red-500 hover:bg-red-400 text-white'
+                  : 'bg-transparent'
+              } `}
+              onClick={() => {
+                closeMenus();
+                discardChanges();
+              }}
             >
-              <span className='text-[1.01rem]'>Close</span>
+              <span className='text-[1.01rem]'>
+                {hasTransformation ? 'Cancel' : 'Close'}
+              </span>
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -563,13 +678,15 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
 
       {/** Asset management navbar */}
 
-      <Container className='fixed z-10 top-0 left-0 w-full h-16 flex items-center justify-between gap-4 bg-gradient-to-b from-black'>
+      <Container className='fixed z-10 top-0 left-0 w-full h-16 flex items-center justify-between gap-4 bg-gradient-to-b from-slate-100'>
         <div className='flex items-center gap-4'>
           <ul>
             <li>
               <Link
                 href='/'
-                className={`${buttonVariants({ variant: 'ghost' })} text-white`}
+                className={`${buttonVariants({
+                  variant: 'ghost',
+                })} text-neutral-600`}
               >
                 <ChevronLeft className='h-6 w-6' />
                 Back
@@ -584,7 +701,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
               className='text-white'
               onClick={() => setFilterSheetIsOpen(true)}
             >
-              <Pencil className='h-6 w-6' />
+              <Pencil className='h-6 w-6 text-neutral-600' />
               <span className='sr-only'>Edit</span>
             </Button>
           </li>
@@ -594,7 +711,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
               className='text-white'
               onClick={() => setInfoSheetIsOpen(true)}
             >
-              <Info className='h-6 w-6' />
+              <Info className='h-6 w-6 text-neutral-600' />
               <span className='sr-only'>Info</span>
             </Button>
           </li>
@@ -604,7 +721,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
               className='text-white'
               onClick={() => setDeletion({ state: 'confirm' })}
             >
-              <Trash2 className='h-6 w-6' />
+              <Trash2 className='h-6 w-6 text-neutral-600' />
               <span className='sr-only'>Delete</span>
             </Button>
           </li>
@@ -615,7 +732,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
 
       <div className='relative flex justify-center items-center align-center w-full h-full'>
         <CldImage
-          key={JSON.stringify(transformations)}
+          key={`${JSON.stringify(transformations)} -${version}`}
           className='object-contain'
           width={resource.width}
           height={resource.height}
@@ -623,6 +740,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
           alt={`Image of ${resource.public_id}`}
           style={imgStyles}
           {...transformations}
+          version={version}
         />
       </div>
     </div>

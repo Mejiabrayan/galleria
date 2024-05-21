@@ -14,11 +14,11 @@
 - [x] Add animated loading placeholders for images
 - [x] Dynamically crop and resize images to different aspect ratios
 - [x] Customize images with filters and effects
-- [ ] Save and update images with applied transformations and effects
-- [ ] Refresh and update UI state on image save
-- [ ] Save images as copies
-- [ ] Delete images
-- [ ] Invalidate Tanstack Query tags on change
+- [x] Save and update images with applied transformations and effects
+- [x] Refresh and update UI state on image save
+- [x] Save images as copies
+- [x] Delete images
+- [x] Invalidate Tanstack Query tags on change
 - [ ] Add image resource metadata to the info panel
 - [ ] Set up a Next.js loading UI for React Suspense streaming
 - [ ] Add loading indicators to the homepage gallery

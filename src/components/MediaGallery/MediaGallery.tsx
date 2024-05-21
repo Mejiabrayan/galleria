@@ -81,7 +81,7 @@ const MediaGallery = ({ resources: initialResources }: MediaGalleryProps) => {
       {/** Management navbar presented when assets are selected */}
 
       {selected.length > 0 && (
-        <Container className='fixed z-50 top-0 left-0 w-full h-16 flex items-center justify-between gap-4 bg-black text-white shadow-lg'>
+        <Container className='fixed z-50 top-0 left-0 w-full h-16 flex items-center justify-between gap-4 bg-blue-500 text-white shadow-lg'>
           <div className='flex items-center gap-4'>
             <ul>
               <li>
@@ -122,7 +122,7 @@ const MediaGallery = ({ resources: initialResources }: MediaGalleryProps) => {
       <Container>
         <form>
           {Array.isArray(resources) && (
-            <ul className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mb-12'>
+            <ul className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-2 xl:grid-rows-4 p-2 lg:p-20 xl:p-44 gap-2'>
               {resources.map((resource) => {
                 const isChecked = selected.includes(resource.public_id);
 
@@ -139,7 +139,7 @@ const MediaGallery = ({ resources: initialResources }: MediaGalleryProps) => {
                 }
 
                 return (
-                  <li key={resource.public_id} className='bg-black '>
+                  <li key={resource.public_id}>
                     <div className='relative group'>
                       <label
                         className={`absolute ${
@@ -152,7 +152,7 @@ const MediaGallery = ({ resources: initialResources }: MediaGalleryProps) => {
                         </span>
                         <Checkbox
                           className={`w-6 h-6 rounded-full bg-white shadow ${
-                            isChecked ? 'border-blue-500' : 'border-zinc-200'
+                            isChecked ? 'border-blue-500 ' : 'border-zinc-200'
                           }`}
                           id={resource.public_id}
                           onCheckedChange={handleOnSelectResource}
@@ -160,12 +160,13 @@ const MediaGallery = ({ resources: initialResources }: MediaGalleryProps) => {
                         />
                       </label>
                       <Link
-                        className={`block cursor-pointer border-8 transition-[border] ${
+                        className={`block cursor-pointer border-4 rounded-2xl transition-[border] ${
                           isChecked ? 'border-blue-500' : 'border-white'
                         }`}
                         href={`/resources/${resource.asset_id}`}
                       >
                         <CldImage
+                          className='rounded-xl shadow-xl '
                           width={resource.width}
                           height={resource.height}
                           src={resource.public_id}
