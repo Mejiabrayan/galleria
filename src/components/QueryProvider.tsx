@@ -3,7 +3,7 @@
 
 // We can not useState or useRef in a server component, which is why we are
 // extracting this part out into it's own file with 'use client' on top
-import { useState } from 'react'
+import { ReactNode, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 function makeQueryClient() {
@@ -34,7 +34,7 @@ function getQueryClient() {
   }
 }
 
-export default function QueryProviders({ children }: { children: React.ReactNode }) {
+export default function Providers({ children }: { children: ReactNode }) {
   // NOTE: Avoid useState when initializing the query client if you don't
   //       have a suspense boundary between this and the code that may
   //       suspend because React will throw away the client on the initial

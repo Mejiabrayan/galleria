@@ -87,13 +87,6 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
     transformations.removeBackground = true;
   }
 
-  // Canvas sizing based on the image dimensions. The tricky thing about
-  // showing a single image in a space like this in a responsive way is trying
-  // to take up as much room as possible without distorting it or upscaling
-  // the image. Since we have the resource width and height, we can dynamically
-  // determine whether it's landscape, portrait, or square, and change a little
-  // CSS to make it appear centered and scalable!
-
   if (crop === 'square') {
     if (resource.width > resource.height) {
       transformations.height = resource.width;
@@ -104,13 +97,13 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
       source: true,
       type: 'fill',
     };
-  } else if (crop == 'landscape') {
-    transformations.height = Math.floor(resource.width / (16 / 9)); // 16:9 aspect ratio
+  } else if (crop === 'landscape') {
+    transformations.height = Math.floor(resource.width / (16 / 9));
     transformations.crop = {
       source: true,
       type: 'fill',
     };
-  } else if (crop == 'portrait') {
+  } else if (crop === 'portrait') {
     transformations.width = Math.floor(resource.height / (16 / 9));
     transformations.crop = {
       source: true,
@@ -143,14 +136,14 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
 
   const imgStyles: Record<string, string | number> = {};
 
-  if (isLandscape) {
+  if ( isLandscape ) {
     imgStyles.maxWidth = resource.width;
     imgStyles.width = '100%';
     imgStyles.height = 'auto';
-  } else if (isPortrait || isSquare) {
+  } else if ( isPortrait || isSquare ) {
     imgStyles.maxHeight = resource.height;
     imgStyles.height = '100vh';
-    imgStyles.width = 'auto';
+    imgStyles.width = 'auto'
   }
 
   /**
@@ -162,11 +155,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
     setFilterSheetIsOpen(false);
     setInfoSheetIsOpen(false);
     setDeletion(undefined);
-    setEnhancements(undefined);
-    setFilter(undefined);
-    setCrop(undefined);
   }
-
   /**
    * discardChanges
    */
@@ -186,24 +175,27 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
       width: resource.width,
       height: resource.height,
       src: resource.public_id,
-      quality: 'default',
       format: 'default',
-      ...transformations,
+      quality: 'default',
+      ...transformations
     });
 
-    await fetch(url); // pre process the image
+    await fetch(url);
 
     const results = await fetch('/api/upload', {
       method: 'POST',
       body: JSON.stringify({
         publicId: resource.public_id,
-        url,
-      }),
-    }).then((r) => r.json());
+        url
+      })
+    }).then(r => r.json())
+
     invalidateQueries();
+
     closeMenus();
     discardChanges();
-    setVersion(Date.now());
+    setVersion(Date.now())
+    console.log('results', results);
   }
 
   async function handleOnSaveCopy() {
@@ -211,12 +203,12 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
       width: resource.width,
       height: resource.height,
       src: resource.public_id,
-      quality: 'default',
       format: 'default',
+      quality: 'default',
       ...transformations,
     });
 
-    await fetch(url); // pre process the image
+    await fetch(url);
 
     const { data } = await fetch('/api/upload', {
       method: 'POST',
@@ -231,16 +223,21 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
   }
 
   async function handleOnDelete() {
-    if (deletion?.state === 'deleting') return;
-    setDeletion({ state: 'deleting' });
+    if (deletion?.state === 'deleting') {
+      return;
+    }
+    setDeletion({
+      state: 'deleting',
+    });
     await fetch('/api/delete', {
       method: 'POST',
       body: JSON.stringify({
         publicId: resource.public_id,
       }),
     });
-    // Invalidate the query cache for the resources list
+
     invalidateQueries();
+
     router.push('/');
   }
 
@@ -287,7 +284,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
   }
 
   return (
-    <div className='h-screen  px-0'>
+    <div className='h-screen px-0'>
       {/** Modal for deletion */}
 
       <Dialog
@@ -301,12 +298,15 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
             </DialogTitle>
           </DialogHeader>
           <DialogFooter className='justify-center sm:justify-center'>
-            <Button onClick={handleOnDelete} variant='destructive'>
+          <Button
+              variant="destructive"
+              onClick={handleOnDelete}
+            >
               {deletion?.state === 'deleting' && (
-                <Loader2 className='h-4 w-4 mr-2' />
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
-              {deletion?.state === 'deleting' && (
-                <Trash2 className='h-4 w-4 mr-2' />
+              {deletion?.state !== 'deleting' && (
+                <Trash2 className="h-4 w-4 mr-2" />
               )}
               Delete
             </Button>
@@ -411,7 +411,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                   <Button
                     onClick={() => setCrop(undefined)}
                     variant='ghost'
-                    className={`text-left justify-start w-full h-14 border-4 bg-transparent ${
+                    className={`text-left justify-start w-full h-14 border-4  ${
                       !crop ? 'border-white' : 'border-transparent'
                     }`}
                   >
@@ -662,6 +662,55 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                   {resource.public_id}
                 </span>
               </li>
+              <li className='mb-3'>
+                <strong className='block text-xs font-normal text-zinc-400 mb-1'>
+                  Date Created
+                </strong>
+                <span className='flex gap-4 items-center text-zinc-100'>
+                  {new Date(resource.created_at).toLocaleDateString()}
+                </span>
+              </li>
+              <li className='mb-3'>
+                <strong className='block text-xs font-normal text-zinc-400 mb-1'>
+                  Width
+                </strong>
+                <span className='flex gap-4 items-center text-zinc-100'>
+                  {resource.width}
+                </span>
+              </li>
+              <li className='mb-3'>
+                <strong className='block text-xs font-normal text-zinc-400 mb-1'>
+                  Height
+                </strong>
+                <span className='flex gap-4 items-center text-zinc-100'>
+                  {resource.height}
+                </span>
+              </li>
+              <li className='mb-3'>
+                <strong className='block text-xs font-normal text-zinc-400 mb-1'>
+                  Format
+                </strong>
+                <span className='flex gap-4 items-center text-zinc-100'>
+                  {resource.format}
+                </span>
+              </li>
+              <li className='mb-3'>
+                <strong className='block text-xs font-normal text-zinc-400 mb-1'>
+                  Size
+                </strong>
+                <span className='flex gap-4 items-center text-zinc-100'>
+                  {resource.bytes}
+                </span>
+              </li>
+
+              <li className='mb-3'>
+                <strong className='block text-xs font-normal text-zinc-400 mb-1'>
+                  Tags
+                </strong>
+                <span className='flex gap-4 items-center text-zinc-100'>
+                  {resource.tags.join(', ')}
+                </span>
+              </li>
             </ul>
           </div>
           <SheetFooter>
@@ -678,15 +727,15 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
 
       {/** Asset management navbar */}
 
-      <Container className='fixed z-10 top-0 left-0 w-full h-16 flex items-center justify-between gap-4 bg-gradient-to-b from-slate-100'>
+      <Container className='fixed z-10 top-0 left-0 w-full h-16 flex items-center justify-between gap-4 bg-transparent backdrop-blur-md'>
         <div className='flex items-center gap-4'>
           <ul>
             <li>
               <Link
                 href='/'
                 className={`${buttonVariants({
-                  variant: 'ghost',
-                })} text-neutral-600`}
+                  variant: 'default',
+                })} text-nuetral-600`}
               >
                 <ChevronLeft className='h-6 w-6' />
                 Back
@@ -696,11 +745,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
         </div>
         <ul className='flex items-center gap-4'>
           <li>
-            <Button
-              variant='ghost'
-              className='text-white'
-              onClick={() => setFilterSheetIsOpen(true)}
-            >
+            <Button variant='ghost' onClick={() => setFilterSheetIsOpen(true)}>
               <Pencil className='h-6 w-6 text-neutral-600' />
               <span className='sr-only'>Edit</span>
             </Button>
@@ -711,7 +756,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
               className='text-white'
               onClick={() => setInfoSheetIsOpen(true)}
             >
-              <Info className='h-6 w-6 text-neutral-600' />
+              <Info className='h-6 w-6  text-neutral-600' />
               <span className='sr-only'>Info</span>
             </Button>
           </li>
@@ -721,7 +766,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
               className='text-white'
               onClick={() => setDeletion({ state: 'confirm' })}
             >
-              <Trash2 className='h-6 w-6 text-neutral-600' />
+              <Trash2 className='h-6 w-6  text-neutral-600' />
               <span className='sr-only'>Delete</span>
             </Button>
           </li>
@@ -730,17 +775,17 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
 
       {/** Asset viewer */}
 
-      <div className='relative flex justify-center items-center align-center w-full h-full'>
+      <div className='relative flex justify-center items-center align-center w-full h-full '>
         <CldImage
-          key={`${JSON.stringify(transformations)} -${version}`}
-          className='object-contain'
+          key={`${JSON.stringify(transformations)}-${version}`}
+          className='object-contain '
           width={resource.width}
           height={resource.height}
           src={resource.public_id}
           alt={`Image of ${resource.public_id}`}
           style={imgStyles}
-          {...transformations}
           version={version}
+          {...transformations}
         />
       </div>
     </div>

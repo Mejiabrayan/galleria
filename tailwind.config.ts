@@ -29,7 +29,6 @@ const config = {
           DEFAULT: 'var(--primary)',
           foreground: 'hsl(var(--primary-foreground))',
           accent: '#C9FF18',
-          btn: 'linear-gradient(180deg, #1994ff 0%, #157cff 100%)',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
