@@ -19,11 +19,11 @@
 - [x] Save images as copies
 - [x] Delete images
 - [x] Invalidate Tanstack Query tags on change
-- [ ] Add image resource metadata to the info panel
-- [ ] Set up a Next.js loading UI for React Suspense streaming
-- [ ] Add loading indicators to the homepage gallery
-- [ ] Create a collage from multiple images
-- [ ] Save collage creations to the library
-- [ ] Generate Ken Burns style zoom animations from images
-- [ ] Stylize images with Color Pop
-- [ ] Optimize creation generation and UI
+- [x] Add image resource metadata to the info panel
+- [x] Set up a Next.js loading UI for React Suspense streaming
+- [x] Add loading indicators to the homepage gallery
+- [x] Create a collage from multiple images
+- [x] Save collage creations to the library
+- [x] Generate Ken Burns style zoom animations from images
+- [x] Stylize images with Color Pop
+- [x] Optimize creation generation and UI
